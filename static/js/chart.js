@@ -1,0 +1,1 @@
+console.error("Chart.js未能正确加载，请手动添加");
