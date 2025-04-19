@@ -1,0 +1,107 @@
+# 解决EMS3管理面板JavaScript错误问题
+
+## 问题描述
+
+当运行打包后的EMS3管理面板时，可能会遇到以下JavaScript错误：
+
+```
+chart.js:1 Failed to load resource: net::ERR_CONNECTION_TIMED_OUT
+Uncaught ReferenceError: toggleCommandInput is not defined
+Uncaught ReferenceError: Chart is not defined
+```
+
+这些错误表明浏览器无法加载必要的JavaScript文件或函数，导致网页功能无法正常工作。
+
+## 解决方案
+
+我们已经更新了打包脚本，现在它会自动：
+
+1. 下载所有必要的JavaScript和CSS文件到本地
+2. 修改HTML模板，使其使用本地文件而不是CDN
+3. 创建包含必要函数的自定义JavaScript文件
+
+### 重新打包应用
+
+请按照以下步骤重新打包应用：
+
+1. 确保您的电脑已连接互联网（需要下载静态文件）
+2. 运行 `python build.py` 或双击 `打包.bat`
+3. 等待打包完成
+4. 使用新生成的dist目录中的文件
+
+### 手动解决方案（如果重新打包不起作用）
+
+如果重新打包后问题仍然存在，您可以手动添加必要的文件：
+
+1. 创建以下目录结构（如果不存在）：
+   ```
+   dist/app.dist/static/js/
+   dist/app.dist/static/css/
+   ```
+
+2. 下载以下文件并放入对应目录：
+   - Chart.js: https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js → static/js/chart.js
+   - Axios: https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.min.js → static/js/axios.min.js
+   - Tailwind CSS: https://cdn.bootcdn.net/ajax/libs/tailwindcss/2.2.19/tailwind.min.css → static/css/tailwind.min.css
+   - Font Awesome: https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css → static/css/all.min.css
+
+3. 创建文件 `static/js/custom.js` 并添加以下内容：
+   ```javascript
+   // 切换命令输入区域的显示和隐藏
+   function toggleCommandInput(show) {
+       const commandArea = document.getElementById('command-area');
+       if (commandArea) {
+           commandArea.style.display = show ? 'block' : 'none';
+       }
+   }
+
+   // 初始化玩家图表
+   function initPlayersChart() {
+       console.log("图表功能初始化中...");
+       try {
+           const ctx = document.getElementById('players-chart').getContext('2d');
+           if (ctx && typeof Chart !== 'undefined') {
+               window.playersChart = new Chart(ctx, {
+                   type: 'line',
+                   data: {
+                       labels: [],
+                       datasets: [{
+                           label: '在线玩家数',
+                           data: [],
+                           backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                           borderColor: 'rgba(75, 192, 192, 1)',
+                           borderWidth: 1
+                       }]
+                   },
+                   options: {
+                       scales: {
+                           y: {
+                               beginAtZero: true,
+                               ticks: {
+                                   stepSize: 1
+                               }
+                           }
+                       },
+                       responsive: true,
+                       maintainAspectRatio: false
+                   }
+               });
+               console.log("图表初始化完成");
+           } else {
+               console.error("无法获取图表上下文或Chart库未加载");
+           }
+       } catch (e) {
+           console.error("初始化图表时出错:", e);
+       }
+   }
+   ```
+
+## 其他可能的问题
+
+如果您遇到"找不到指定文件"的错误：
+
+1. 确保`logs`目录存在于应用目录中
+2. 检查`frpc.exe`（如果您使用OpenFrp功能）是否放在正确位置
+3. 检查所有目录和文件的权限是否正确
+
+如有其他问题，请查看应用日志（logs/ems3.log）以获取更多详细信息。 
